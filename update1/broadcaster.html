@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Broadcaster</title>
+</head>
+<body>
+  <h1>Broadcaster</h1>
+  <button onclick="startCamera()">Start Camera</button>
+  <video id="preview" autoplay muted playsinline></video>
+
+  <script src="https://unpkg.com/peerjs@1.3.1/dist/peerjs.min.js"></script>
+  <script>
+    const preview = document.getElementById('preview');
+    const peer = new Peer('broadcaster', {
+      host: location.hostname,
+      port: 9000,
+      path: '/peerjs'
+    });
+
+    let stream;
+
+    function startCamera() {
+      navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+        .then(mediaStream => {
+          stream = mediaStream;
+          preview.srcObject = stream;
+
+          peer.on('call', call => {
+            call.answer(stream);
+            console.log('Viewer connected, stream sent.');
+          });
+        })
+        .catch(err => console.error('Camera error:', err));
+    }
+  </script>
+</body>
+</html>
