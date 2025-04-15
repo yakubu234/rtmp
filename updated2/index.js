@@ -9,6 +9,8 @@ const app = express();
 const port = 4000; // run this separately from index.js
 
 app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.json());
+
 
 // Start HLS generation from RTMP
 app.get('/generate-hls/:streamKey', (req, res) => {

@@ -1,0 +1,65 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>MediaRecorder Streaming</title>
+  <style>
+    body { font-family: Arial; padding: 20px; background: #f4f4f4; }
+    video { width: 100%; max-width: 600px; margin-top: 20px; display: none; }
+  </style>
+</head>
+<body>
+  <h1>Start Streaming</h1>
+  <button onclick="startCamera()">Use Camera</button>
+  <button onclick="startScreen()">Share Screen</button>
+  <button onclick="playFile()">Upload Video</button>
+  <button onclick="stopStreaming()">Stop</button>
+  <video id="preview" controls autoplay></video>
+
+  <script>
+    let ws, recorder;
+    const preview = document.getElementById('preview');
+
+    function setupRecorder(stream) {
+      ws = new WebSocket('ws://localhost:4000/ws?streamKey=stream_demo&token=YOUR_SECRET');
+      ws.onopen = () => {
+        recorder = new MediaRecorder(stream, { mimeType: 'video/webm; codecs=vp8' });
+        recorder.ondataavailable = e => { if (e.data.size > 0) ws.send(e.data); };
+        recorder.start(100);
+        preview.srcObject = stream;
+        preview.style.display = 'block';
+      };
+    }
+
+    async function startCamera() {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      setupRecorder(stream);
+    }
+
+    async function startScreen() {
+      const stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
+      setupRecorder(stream);
+    }
+
+    function playFile() {
+      const input = document.createElement('input');
+      input.type = 'file'; input.accept = 'video/*';
+      input.onchange = () => {
+        const file = input.files[0];
+        const url = URL.createObjectURL(file);
+        preview.src = url;
+        preview.style.display = 'block';
+        preview.onplay = () => setupRecorder(preview.captureStream());
+      };
+      input.click();
+    }
+
+    function stopStreaming() {
+      recorder?.stop();
+      ws?.close();
+      alert('Stream stopped.');
+    }
+  </script>
+</body>
+</html>
