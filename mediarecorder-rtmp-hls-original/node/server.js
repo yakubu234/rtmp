@@ -22,7 +22,7 @@ app.get('/generate-hls/:streamKey', (req, res) => {
   if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
 
   const ffmpeg = spawn('ffmpeg', [
-    '-i', `rtmp://localhost/live/${streamKey}`,
+    '-i', `rtmp://anthena.i.ng/live/${streamKey}`,
     '-map', '0:v:0', '-s:v:0', '640x360', '-b:v:0', '800k',
     '-map', '0:v:0', '-s:v:1', '1280x720', '-b:v:1', '2800k',
     '-map', '0:v:0', '-s:v:2', '1920x1080', '-b:v:2', '5000k',
