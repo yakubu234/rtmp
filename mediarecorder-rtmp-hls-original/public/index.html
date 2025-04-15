@@ -22,7 +22,7 @@
     const preview = document.getElementById('preview');
 
     function setupRecorder(stream) {
-      ws = new WebSocket('ws://localhost:4000/ws?streamKey=stream_demo&token=YOUR_SECRET');
+      ws = new WebSocket('ws://anthena.i.ng/ws?streamKey=stream_demo&token=YOUR_SECRET');
       ws.onopen = () => {
         recorder = new MediaRecorder(stream, { mimeType: 'video/webm; codecs=vp8' });
         recorder.ondataavailable = e => { if (e.data.size > 0) ws.send(e.data); };

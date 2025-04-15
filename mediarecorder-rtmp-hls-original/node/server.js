@@ -112,7 +112,7 @@ function handleStream(ws, streamKey) {
     '-b:a', '128k',
     '-ar', '44100',
     '-f', 'flv',
-    `rtmp://localhost/live/${streamKey}`
+    `rtmp://anthena.i.ng/live/${streamKey}`
   ]);
 
   streamSessions[streamKey] = ffmpeg;
