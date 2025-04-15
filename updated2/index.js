@@ -20,7 +20,7 @@ app.get('/generate-hls/:streamKey', (req, res) => {
     }
 
     const ffmpeg = spawn('ffmpeg', [
-        '-i', `rtmp://localhost/live/${streamKey}`,
+        '-i', `rtmp://104.251.217.179/live/${streamKey}`,
         '-map', '0:v:0', '-s:v:0', '640x360', '-b:v:0', '800k',
         '-map', '0:v:0', '-s:v:1', '1280x720', '-b:v:1', '2800k',
         '-map', '0:v:0', '-s:v:2', '1920x1080', '-b:v:2', '5000k',
@@ -128,7 +128,7 @@ peerServer.on('connection', (client) => {
                 '-b:a', '160k',
                 '-ar', '44100',
                 '-f', 'flv',
-                `rtmp://your-server-ip/live/${streamKey}` // Replace with your server's IP or domain
+                `rtmp://104.251.217.179/live/${streamKey}` // Replace with your server's IP or domain
             ]);
 
             // Pipe the incoming WebRTC stream to FFmpeg
