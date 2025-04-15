@@ -54,7 +54,7 @@ app.get('/metrics', (req, res) => {
   res.json({ active: metrics });
 });
 
-app.get('/', (req, res) => {
+app.get('/lists', (req, res) => {
   const base = '/tmp/hls';
   const streams = fs.existsSync(base) ? fs.readdirSync(base) : [];
   res.send('<h1>Streams</h1><ul>' +
