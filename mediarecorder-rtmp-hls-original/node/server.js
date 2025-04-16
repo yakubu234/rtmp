@@ -117,6 +117,7 @@ function handleStream(ws, streamKey) {
 
   streamSessions[streamKey] = ffmpeg;
 
+  console.log(streamSessions);
   ws.on('message', (msg) => {
     console.log(`Received chunk: ${msg.length} bytes`);
     //updating the message length
