@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -68,62 +69,52 @@
     }
 
     async function startCamera() {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-        console.log('📷 Camera stream tracks:', stream.getTracks().map(t => t.kind));
-        setupRecorder(stream);
-      } catch (error) {
-        console.error('Error accessing camera:', error);
-        alert('Error accessing camera. Please check your permissions.');
-      }
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      console.log('📷 Camera stream tracks:', stream.getTracks().map(t => t.kind));
+
+      setupRecorder(stream);
     }
 
     async function startScreen() {
-      try {
-        const stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
-        console.log('🖥️ Screen share stream tracks:', stream.getTracks().map(t => t.kind));
-        setupRecorder(stream);
-        stream.getVideoTracks()[0].addEventListener('ended', () => {
-          console.log('Screen sharing stopped by user.');
-          stopStreaming();
-        });
-      } catch (error) {
-        console.error('Error accessing screen share:', error);
-        alert('Error accessing screen share. Please check your permissions.');
-      }
+      const stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
+      setupRecorder(stream);
     }
 
     function playFile() {
-      const input = document.createElement('input');
-      input.type = 'file';
+      const input = document.createElement('input'); 
+      input.type = 'file'; 
       input.accept = 'video/*';
+
       input.onchange = () => {
-        const file = input.files[0];
-        const url = URL.createObjectURL(file);
+        const file = input.files[0]; const url = URL.createObjectURL(file);
         preview.src = url;
         preview.style.display = 'block';
 
-        preview.onloadedmetadata = () => {
-          console.log('🎞 Video loaded:', preview.duration);
-          // Ensure the video is loaded before capturing the stream
-          preview.play().then(() => {
-            console.log('🎬 Video started playing');
-            const stream = preview.captureStream();
-            console.log('📡 Captured stream:', stream, 'Tracks:', stream.getTracks());
-            setupRecorder(stream);
-          }).catch(error => {
-            console.error('Error playing video:', error);
-            alert('Error playing the selected video.');
-          });
-        };
+        preview.load();
 
-        preview.onerror = (error) => {
-          console.error('Error loading video:', error);
-          alert('Error loading the selected video.');
+        // Ensure metadata is loaded first
+        preview.onloadedmetadata = () => {
+          preview.play();
+
+          const waitForPlayback = () => {
+            // Wait until the video has actually started playing and has active tracks
+            if (preview.readyState >= 3 && !preview.paused && preview.captureStream().getVideoTracks().length > 0) {
+              const stream = preview.captureStream();
+              console.log('📡 Captured stream:', stream, 'Tracks:', stream.getTracks());
+              setupRecorder(stream);
+            } else {
+              console.log('⏳ Waiting for video to start playing...');
+              setTimeout(waitForPlayback, 100); // retry until stream is active
+            }
+          };
+
+          waitForPlayback();
         };
       };
-      input.click();
+      
+      input.click(); 
     }
+
 
     function stopStreaming() {
       if (recorder && recorder.state !== 'inactive') {
