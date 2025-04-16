@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -69,46 +68,80 @@
     }
 
     async function startCamera() {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-      console.log('📷 Camera stream tracks:', stream.getTracks().map(t => t.kind));
-
-      setupRecorder(stream);
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        console.log('📷 Camera stream tracks:', stream.getTracks().map(t => t.kind));
+        setupRecorder(stream);
+      } catch (error) {
+        console.error('Error accessing camera:', error);
+        alert('Error accessing camera. Please check your permissions.');
+      }
     }
 
     async function startScreen() {
-      const stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
-      setupRecorder(stream);
+      try {
+        const stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
+        console.log('🖥️ Screen share stream tracks:', stream.getTracks().map(t => t.kind));
+        setupRecorder(stream);
+        stream.getVideoTracks()[0].addEventListener('ended', () => {
+          console.log('Screen sharing stopped by user.');
+          stopStreaming();
+        });
+      } catch (error) {
+        console.error('Error accessing screen share:', error);
+        alert('Error accessing screen share. Please check your permissions.');
+      }
     }
 
     function playFile() {
-  const input = document.createElement('input');
-  input.type = 'file';
-  input.accept = 'video/*';
-  input.onchange = () => {
-    const file = input.files[0];
-    const url = URL.createObjectURL(file);
-    preview.src = url;
-    preview.style.display = 'block';
-    preview.play(); // 👈 force playback
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'video/*';
+      input.onchange = () => {
+        const file = input.files[0];
+        const url = URL.createObjectURL(file);
+        preview.src = url;
+        preview.style.display = 'block';
 
-    preview.onloadeddata = () => {
-      console.log('🎞 Video loaded:', preview.duration);
-    };
+        preview.onloadedmetadata = () => {
+          console.log('🎞 Video loaded:', preview.duration);
+          // Ensure the video is loaded before capturing the stream
+          preview.play().then(() => {
+            console.log('🎬 Video started playing');
+            const stream = preview.captureStream();
+            console.log('📡 Captured stream:', stream, 'Tracks:', stream.getTracks());
+            setupRecorder(stream);
+          }).catch(error => {
+            console.error('Error playing video:', error);
+            alert('Error playing the selected video.');
+          });
+        };
 
-    preview.onplay = () => {
-      console.log('🎬 Video started playing');
-      const stream = preview.captureStream();
-      console.log('📡 Captured stream:', stream, 'Tracks:', stream.getTracks());
-      setupRecorder(stream);
-    };
-  };
-  input.click();
-}
-
+        preview.onerror = (error) => {
+          console.error('Error loading video:', error);
+          alert('Error loading the selected video.');
+        };
+      };
+      input.click();
+    }
 
     function stopStreaming() {
-      recorder?.stop();
-      ws?.close();
+      if (recorder && recorder.state !== 'inactive') {
+        recorder.stop();
+      }
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.close();
+      }
+      if (preview.srcObject) {
+        const tracks = preview.srcObject.getTracks();
+        tracks.forEach(track => track.stop());
+        preview.srcObject = null;
+      } else if (preview.src) {
+        preview.pause();
+        preview.removeAttribute('src');
+        preview.load();
+      }
+      console.log('Stream stopped.');
       alert('Stream stopped.');
     }
   </script>
