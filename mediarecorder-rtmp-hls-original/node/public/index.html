@@ -86,33 +86,44 @@
       input.accept = 'video/*';
 
       input.onchange = () => {
-        const file = input.files[0]; const url = URL.createObjectURL(file);
-        preview.src = url;
-        preview.style.display = 'block';
-
-        // preview.load();
-
-        // Ensure metadata is loaded first
-        preview.onloadedmetadata = () => {
-          console.log('✅ Metadata loaded. Duration:', preview.duration);
-          preview.play().catch(error => console.error('Error playing video:', error));
-        }
+        const file = input.files[0]; 
+        const url = URL.createObjectURL(file);
         
-        preview.onplay = () => {
-          console.log('🎬 Video started playing');
-          // Capture stream AFTER playback starts
-          const stream = preview.captureStream();
-          if (!stream || stream.getVideoTracks().length === 0) {
-            console.error('❌ Failed to capture stream: no video tracks');
-            return;
-          }
-          console.log('📡 Captured stream:', stream);
-          setupRecorder(stream);
+        // Create an offscreen video element to extract the stream
+const tempVideo = document.createElement('video');
+tempVideo.src = url;
+tempVideo.crossOrigin = 'anonymous';
+tempVideo.muted = true;
+tempVideo.playsInline = true;
+tempVideo.autoplay = true;
+
+// Append to DOM in case some browsers require it to render
+tempVideo.style.display = 'none';
+document.body.appendChild(tempVideo);
+
+tempVideo.onloadedmetadata = () => {
+  tempVideo.play();
+
+  const waitForPlayback = () => {
+    if (tempVideo.readyState >= 3 && !tempVideo.paused && tempVideo.captureStream().getVideoTracks().length > 0) {
+      const stream = tempVideo.captureStream();
+      console.log('🎞️ Captured stream from uploaded file:', stream);
+      setupRecorder(stream);
+    } else {
+      console.log('⏳ Waiting for video playback to begin...');
+      setTimeout(waitForPlayback, 100);
+    }
+  };
+
+  waitForPlayback();
 };
 
-preview.onerror = (e) => {
-  console.error('❌ Error loading video:', e);
+tempVideo.onerror = (e) => {
+  console.error('❌ Error playing uploaded video:', e);
 };
+        
+        
+
 // Clean up the object URL when the video is no longer needed
 preview.onended = () => {
           URL.revokeObjectURL(url);
