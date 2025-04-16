@@ -29,8 +29,10 @@
 
         console.log(MediaRecorder.isTypeSupported('video/webm; codecs=vp8'));
         recorder = new MediaRecorder(stream, { mimeType: 'video/webm; codecs=vp8' });
+        console.log('MediaRecorder created:', recorder.mimeType);
 
         recorder.ondataavailable = e => {
+          console.log('ondataavailable fired');
           if (e.data.size > 0 && ws.readyState === 1) {
             console.log('Sending chunk:', e.data.size);
             ws.send(e.data);
@@ -40,15 +42,29 @@
         };
 
         recorder.onstart = () => console.log('MediaRecorder started');
-        recorder.onerror = err => console.error('MediaRecorder error:', err);
 
-        recorder.start(100); // send chunks every 100ms
+        try {
+          recorder.start(100);// send chunks every 100ms
+          console.log('MediaRecorder.start() called');
+        } catch (err) {
+          console.error('MediaRecorder start failed:', err);
+        }
+
+        recorder.onerror = err => console.error('MediaRecorder error:', err);
         preview.srcObject = stream;
         preview.style.display = 'block';
+
+        setInterval(() => {
+          if (recorder) console.log('Recorder state:', recorder.state);
+        }, 1000);
       };
 
       ws.onerror = err => {
         console.error('WebSocket error:', err);
+      };
+
+      ws.onclose = () => {
+        console.warn('WebSocket closed unexpectedly');
       };
     }
 
