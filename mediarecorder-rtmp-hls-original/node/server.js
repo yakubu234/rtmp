@@ -118,6 +118,11 @@ function handleStream(ws, streamKey) {
   ]);
 
   streamSessions[streamKey] = ffmpeg;
+   // ✅ Add this block right here:
+   ffmpeg.on('error', (err) => {
+    console.error(`FFmpeg process error for ${streamKey}:`, err.message);
+  });
+  
   passThrough.pipe(ffmpeg.stdin);
   ws.on('message', async (msg) => {
      // If msg is not a Buffer (e.g. a Blob), convert it
