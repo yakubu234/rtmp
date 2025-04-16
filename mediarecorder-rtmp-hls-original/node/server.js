@@ -118,6 +118,7 @@ function handleStream(ws, streamKey) {
   streamSessions[streamKey] = ffmpeg;
 
   ws.on('message', (msg) => {
+    console.log(`Received chunk: ${msg.length} bytes`);
     //updating the message length
     activeStreams.get(streamKey).bytesReceived += msg.length;
     ffmpeg.stdin.write(msg);

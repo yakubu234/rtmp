@@ -24,8 +24,15 @@
     function setupRecorder(stream) {
       ws = new WebSocket('wss://anthena.i.ng/ws?streamKey=stream_demo&token=YOUR_SECRET');
       ws.onopen = () => {
+        console.log(MediaRecorder.isTypeSupported('video/webm; codecs=vp8'));
         recorder = new MediaRecorder(stream, { mimeType: 'video/webm; codecs=vp8' });
-        recorder.ondataavailable = e => { if (e.data.size > 0) ws.send(e.data); };
+        // recorder.ondataavailable = e => { if (e.data.size > 0) ws.send(e.data); };
+        recorder.ondataavailable = e => {
+          if (e.data.size > 0 && ws.readyState === 1) {
+            console.log('Sending chunk:', e.data.size);
+            ws.send(e.data);
+          }
+        };
         recorder.start(100);
         preview.srcObject = stream;
         preview.style.display = 'block';
