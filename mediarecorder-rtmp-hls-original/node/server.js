@@ -120,16 +120,16 @@ function handleStream(ws, streamKey) {
   ws.on('message', async (msg) => {
      // If msg is not a Buffer (e.g. a Blob), convert it
     const chunk = Buffer.isBuffer(msg) ? msg : Buffer.from(new Uint8Array(await msg.arrayBuffer?.()));
-
+    console.log('First 10 bytes:', chunk.slice(0, 10));
     console.log(`Received chunk: ${chunk.length} bytes`);
     activeStreams.get(streamKey).bytesReceived += chunk.length;
 
-    const canWrite = ffmpeg.stdin.write(chunk);
-    if (!canWrite) {
-      console.warn('FFmpeg is overwhelmed. Applying backpressure...');
-      ws.pause(); // prevent overload
-      ffmpeg.stdin.once('drain', () => ws.resume());
-    }
+    // const canWrite = ffmpeg.stdin.write(chunk);
+    // if (!canWrite) {
+    //   console.warn('FFmpeg is overwhelmed. Applying backpressure...');
+    //   ws.pause(); // prevent overload
+    //   ffmpeg.stdin.once('drain', () => ws.resume());
+    // }
   });
 
   ws.on('close', () => {
