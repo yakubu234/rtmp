@@ -79,17 +79,30 @@
     }
 
     function playFile() {
-      const input = document.createElement('input');
-      input.type = 'file'; input.accept = 'video/*';
-      input.onchange = () => {
-        const file = input.files[0];
-        const url = URL.createObjectURL(file);
-        preview.src = url;
-        preview.style.display = 'block';
-        preview.onplay = () => setupRecorder(preview.captureStream());
-      };
-      input.click();
-    }
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'video/*';
+  input.onchange = () => {
+    const file = input.files[0];
+    const url = URL.createObjectURL(file);
+    preview.src = url;
+    preview.style.display = 'block';
+    preview.play(); // 👈 force playback
+
+    preview.onloadeddata = () => {
+      console.log('🎞 Video loaded:', preview.duration);
+    };
+
+    preview.onplay = () => {
+      console.log('🎬 Video started playing');
+      const stream = preview.captureStream();
+      console.log('📡 Captured stream:', stream, 'Tracks:', stream.getTracks());
+      setupRecorder(stream);
+    };
+  };
+  input.click();
+}
+
 
     function stopStreaming() {
       recorder?.stop();
