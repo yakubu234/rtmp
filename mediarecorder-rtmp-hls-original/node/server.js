@@ -117,12 +117,19 @@ function handleStream(ws, streamKey) {
 
   streamSessions[streamKey] = ffmpeg;
 
-  console.log(streamSessions);
-  ws.on('message', (msg) => {
-    console.log(`Received chunk: ${msg.length} bytes`);
-    //updating the message length
-    activeStreams.get(streamKey).bytesReceived += msg.length;
-    ffmpeg.stdin.write(msg);
+  ws.on('message', async (msg) => {
+     // If msg is not a Buffer (e.g. a Blob), convert it
+    const chunk = Buffer.isBuffer(msg) ? msg : Buffer.from(new Uint8Array(await msg.arrayBuffer?.()));
+
+    console.log(`Received chunk: ${chunk.length} bytes`);
+    activeStreams.get(streamKey).bytesReceived += chunk.length;
+
+    const canWrite = ffmpeg.stdin.write(chunk);
+    if (!canWrite) {
+      console.warn('FFmpeg is overwhelmed. Applying backpressure...');
+      ws.pause(); // prevent overload
+      ffmpeg.stdin.once('drain', () => ws.resume());
+    }
   });
 
   ws.on('close', () => {
