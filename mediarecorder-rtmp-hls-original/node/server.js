@@ -118,12 +118,14 @@ function handleStream(ws, streamKey) {
   ]);
 
   streamSessions[streamKey] = ffmpeg;
-   // ✅ Add this block right here:
-   ffmpeg.on('error', (err) => {
+
+  // ✅ Add this block right here:
+  ffmpeg.on('error', (err) => {
     console.error(`FFmpeg process error for ${streamKey}:`, err.message);
   });
-  
+
   passThrough.pipe(ffmpeg.stdin);
+
   ws.on('message', async (msg) => {
      // If msg is not a Buffer (e.g. a Blob), convert it
     const chunk = Buffer.isBuffer(msg) ? msg : Buffer.from(new Uint8Array(await msg.arrayBuffer?.()));
@@ -148,8 +150,19 @@ function handleStream(ws, streamKey) {
     console.log(`Closed stream for ${streamKey}`);
   });
 
+  // when a data is received wether error or not.
   ffmpeg.stderr.on('data', (data) => {
-    console.error(`FFmpeg error for ${streamKey}:`, data.toString());
+    const text = data.toString();
+    if (text.toLowerCase().includes('error')) {
+      console.error(`FFmpeg error for ${streamKey}:`, text);
+    } else {
+      console.log(`FFmpeg for ${streamKey}:`, text);
+    }
+  });
+
+  // when closed
+  ffmpeg.on('close', (code) => {
+    console.log(`FFmpeg exited with code ${code}`);
   });
 }
 

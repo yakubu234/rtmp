@@ -34,6 +34,8 @@
           if (e.data.size > 0 && ws.readyState === 1) {
             console.log('Sending chunk:', e.data.size);
             ws.send(e.data);
+          } else {
+            console.log('Not sending chunk – WebSocket not ready or empty');
           }
         };
 

@@ -91,3 +91,10 @@ Add this line to renew every day at 3:00 AM:
 ---
 
 ✅ Done! Your domain now has HTTPS enabled via Let's Encrypt.
+
+
+keep ports open for ffmpeg and web socket
+
+sudo ufw allow 1935/tcp   # RTMP
+sudo ufw allow 80/tcp     # HTTP (redirect to HTTPS)
+sudo ufw allow 443/tcp    # HTTPS and WSS
