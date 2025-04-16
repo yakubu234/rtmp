@@ -1,159 +1,204 @@
-
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <title>MediaRecorder Streaming</title>
-  <style>
-    body { font-family: Arial; padding: 20px; background: #f4f4f4; }
-    video { width: 100%; max-width: 600px; margin-top: 20px; display: none; }
-  </style>
-</head>
-<body>
-  <h1>Start Streaming</h1>
-  <button onclick="startCamera()">Use Camera</button>
-  <button onclick="startScreen()">Share Screen</button>
-  <button onclick="playFile()">Upload Video</button>
-  <button onclick="stopStreaming()">Stop</button>
-  <video id="preview" controls autoplay></video>
+   <head>
+      <meta charset="UTF-8" />
+      <title>MediaRecorder Streaming</title>
+      <style>
+         body { font-family: Arial; padding: 20px; background: #f4f4f4; }
+         video { width: 100%; max-width: 600px; margin-top: 20px; display: none; }
+      </style>
+   </head>
+   <body>
+      <h1>Start Streaming</h1>
+      <button onclick="startCamera()">Use Camera</button>
+      <button onclick="startScreen()">Share Screen</button>
+      <button onclick="playFile()">Upload Video</button>
+      <button onclick="stopStreaming()">Stop</button>
+      <button onclick="pauseOrResume()">Pause / Resume</button>
+      <video id="preview" controls autoplay></video>
+      <script>
+        let ws, recorder;
+        let hiddenVideo = null;
+        let isPaused = false;
+        const preview = document.getElementById('preview');
 
-  <script>
-    let ws, recorder;
-    const preview = document.getElementById('preview');
+        function setupRecorder(stream) {
+          ws = new WebSocket('wss://anthena.i.ng/ws?streamKey=stream_demo&token=YOUR_SECRET');
 
-    function setupRecorder(stream) {
-      ws = new WebSocket('wss://anthena.i.ng/ws?streamKey=stream_demo&token=YOUR_SECRET');
+          ws.onopen = () => {
+              console.log('WebSocket opened, now starting MediaRecorder...');
 
-      ws.onopen = () => {
-        console.log('WebSocket opened, now starting MediaRecorder...');
+              console.log(MediaRecorder.isTypeSupported('video/webm; codecs=vp8'));
+              recorder = new MediaRecorder(stream, {
+                mimeType: 'video/webm; codecs=vp8'
+              });
+              console.log('MediaRecorder created:', recorder.mimeType);
 
-        console.log(MediaRecorder.isTypeSupported('video/webm; codecs=vp8'));
-        recorder = new MediaRecorder(stream, { mimeType: 'video/webm; codecs=vp8' });
-        console.log('MediaRecorder created:', recorder.mimeType);
+              recorder.ondataavailable = e => {
+                console.log('ondataavailable fired');
+                if (e.data.size > 0 && ws.readyState === 1) {
+                    console.log('Sending chunk:', e.data.size);
+                    ws.send(e.data);
+                } else {
+                    console.log('Not sending chunk – WebSocket not ready or empty');
+                }
+              };
 
-        recorder.ondataavailable = e => {
-          console.log('ondataavailable fired');
-          if (e.data.size > 0 && ws.readyState === 1) {
-            console.log('Sending chunk:', e.data.size);
-            ws.send(e.data);
-          } else {
-            console.log('Not sending chunk – WebSocket not ready or empty');
-          }
-        };
+              recorder.onstart = () => console.log('MediaRecorder started');
 
-        recorder.onstart = () => console.log('MediaRecorder started');
+              try {
+                recorder.start(100); // send chunks every 100ms
+                console.log('MediaRecorder.start() called');
+              } catch (err) {
+                console.error('MediaRecorder start failed:', err);
+              }
 
-        try {
-          recorder.start(100);// send chunks every 100ms
-          console.log('MediaRecorder.start() called');
-        } catch (err) {
-          console.error('MediaRecorder start failed:', err);
+              recorder.onerror = err => console.error('MediaRecorder error:', err);
+              preview.srcObject = stream;
+              preview.style.display = 'block';
+
+              setInterval(() => {
+                if (recorder) console.log('Recorder state:', recorder.state);
+              }, 1000);
+          };
+
+          ws.onerror = err => {
+              console.error('WebSocket error:', err);
+          };
+
+          ws.onclose = () => {
+              console.warn('WebSocket closed unexpectedly');
+          };
         }
 
-        recorder.onerror = err => console.error('MediaRecorder error:', err);
-        preview.srcObject = stream;
-        preview.style.display = 'block';
+        async function startCamera() {
+          const stream = await navigator.mediaDevices.getUserMedia({
+              video: true,
+              audio: true
+          });
+          console.log('📷 Camera stream tracks:', stream.getTracks().map(t => t.kind));
 
-        setInterval(() => {
-          if (recorder) console.log('Recorder state:', recorder.state);
-        }, 1000);
-      };
+          setupRecorder(stream);
+        }
 
-      ws.onerror = err => {
-        console.error('WebSocket error:', err);
-      };
+        async function startScreen() {
+          const stream = await navigator.mediaDevices.getDisplayMedia({
+              video: true,
+              audio: true
+          });
+          setupRecorder(stream);
+        }
 
-      ws.onclose = () => {
-        console.warn('WebSocket closed unexpectedly');
-      };
-    }
+        function playFile() {
+          const input = document.createElement('input');
+          input.type = 'file';
+          input.accept = 'video/*';
 
-    async function startCamera() {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-      console.log('📷 Camera stream tracks:', stream.getTracks().map(t => t.kind));
+          input.onchange = () => {
+              const file = input.files[0];
+              const url = URL.createObjectURL(file);
 
-      setupRecorder(stream);
-    }
+              // Create an offscreen video element to extract the stream
+              // Setup hidden video element for streaming
+              hiddenVideo = document.createElement('video');
+              hiddenVideo.src = url;
+              hiddenVideo.crossOrigin = 'anonymous';
+              hiddenVideo.muted = true;
+              hiddenVideo.playsInline = true;
+              hiddenVideo.autoplay = true;
+              hiddenVideo.style.display = 'none';
 
-    async function startScreen() {
-      const stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
-      setupRecorder(stream);
-    }
+              document.body.appendChild(hiddenVideo);
 
-    function playFile() {
-      const input = document.createElement('input'); 
-      input.type = 'file'; 
-      input.accept = 'video/*';
+              hiddenVideo.onloadedmetadata = () => {
+                hiddenVideo.play();
 
-      input.onchange = () => {
-        const file = input.files[0]; 
-        const url = URL.createObjectURL(file);
+                const waitForStream = () => {
+                    const stream = hiddenVideo.captureStream();
+                    if (!stream || stream.getVideoTracks().length === 0) {
+                      console.log('⏳ Waiting for video stream to become active...');
+                      setTimeout(waitForStream, 100);
+                      return;
+                    }
+
+                    console.log('📡 Captured stream from uploaded video:', stream);
+                    setupRecorder(stream);
+                };
+
+                waitForStream();
+              };
+
+              hiddenVideo.onerror = (e) => {
+                console.error('❌ Error loading hidden video:', e);
+              };
+
+
+              // Clean up the object URL when the video is no longer needed
+              hiddenVideo.onended = () => {
+                URL.revokeObjectURL(url);
+              };
+
+          };
+
+          input.click();
+        }
+
+        function pauseOrResume() {
+          if (!recorder) return;
+
+          if (recorder.state === 'recording') {
+              recorder.pause();
+              isPaused = true;
+              console.log('⏸️ Recording paused');
+          } else if (recorder.state === 'paused') {
+              recorder.resume();
+              isPaused = false;
+              console.log('▶️ Recording resumed');
+          } else {
+              console.log('⚠️ Recorder is not active');
+          }
+        }
+
+
+        function stopStreaming() {
+          if (recorder && recorder.state !== 'inactive') {
+              recorder.stop();
+          }
+
+          if (ws && ws.readyState === WebSocket.OPEN) {
+              ws.close();
+          }
+
+          // Stop video preview 
+          if (preview.srcObject) {
+              preview.srcObject.getTracks().forEach(track => track.stop());
+              preview.srcObject = null;
+          } else if (preview.src) {
+              preview.pause();
+              preview.removeAttribute('src');
+              preview.load();
+          }
+
+          // Stop and remove hiddenVideo if it exists 
+          if (hiddenVideo) {
+              try {
+                const stream = hiddenVideo.captureStream();
+                stream.getTracks().forEach(track => track.stop());
+              } catch (err) {
+                console.warn('Failed to stop hidden video stream:', err);
+              }
+
+              hiddenVideo.pause();
+              hiddenVideo.removeAttribute('src');
+              hiddenVideo.load();
+              hiddenVideo.remove();
+              hiddenVideo = null;
+          }
+
+          console.log('⛔ Stream stopped.');
+          alert('Stream stopped.');
+        } 
         
-        // Create an offscreen video element to extract the stream
-const tempVideo = document.createElement('video');
-tempVideo.src = url;
-tempVideo.crossOrigin = 'anonymous';
-tempVideo.muted = true;
-tempVideo.playsInline = true;
-tempVideo.autoplay = true;
-
-// Append to DOM in case some browsers require it to render
-tempVideo.style.display = 'none';
-document.body.appendChild(tempVideo);
-
-tempVideo.onloadedmetadata = () => {
-  tempVideo.play();
-
-  const waitForPlayback = () => {
-    if (tempVideo.readyState >= 3 && !tempVideo.paused && tempVideo.captureStream().getVideoTracks().length > 0) {
-      const stream = tempVideo.captureStream();
-      console.log('🎞️ Captured stream from uploaded file:', stream);
-      setupRecorder(stream);
-    } else {
-      console.log('⏳ Waiting for video playback to begin...');
-      setTimeout(waitForPlayback, 100);
-    }
-  };
-
-  waitForPlayback();
-};
-
-tempVideo.onerror = (e) => {
-  console.error('❌ Error playing uploaded video:', e);
-};
-        
-        
-
-// Clean up the object URL when the video is no longer needed
-preview.onended = () => {
-          URL.revokeObjectURL(url);
-        };
-        
-      };
-
-      input.click(); 
-    }
-
-
-    function stopStreaming() {
-      if (recorder && recorder.state !== 'inactive') {
-        recorder.stop();
-      }
-      if (ws && ws.readyState === WebSocket.OPEN) {
-        ws.close();
-      }
-      if (preview.srcObject) {
-        const tracks = preview.srcObject.getTracks();
-        tracks.forEach(track => track.stop());
-        preview.srcObject = null;
-      } else if (preview.src) {
-        preview.pause();
-        preview.removeAttribute('src');
-        preview.load();
-      }
-      console.log('Stream stopped.');
-      alert('Stream stopped.');
-    }
-  </script>
-</body>
+    </script>
+   </body>
 </html>
