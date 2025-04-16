@@ -94,24 +94,34 @@
 
         // Ensure metadata is loaded first
         preview.onloadedmetadata = () => {
+          console.log('✅ Metadata loaded. Duration:', preview.duration);
           preview.play();
+        }
+        
+        preview.onplay = () => {
+  console.log('🎬 Video started playing');
 
-          const waitForPlayback = () => {
-            // Wait until the video has actually started playing and has active tracks
-            if (preview.readyState >= 3 && !preview.paused && preview.captureStream().getVideoTracks().length > 0) {
-              const stream = preview.captureStream();
-              console.log('📡 Captured stream:', stream, 'Tracks:', stream.getTracks());
-              setupRecorder(stream);
-            } else {
-              console.log('⏳ Waiting for video to start playing...');
-              setTimeout(waitForPlayback, 100); // retry until stream is active
-            }
-          };
+  // Wait a bit before capturing the stream
+  setTimeout(() => {
+    const stream = preview.captureStream();
 
-          waitForPlayback();
-        };
+    if (!stream || stream.getVideoTracks().length === 0) {
+      console.error('❌ Failed to capture stream: no video tracks');
+      return;
+    }
+
+    console.log('📡 Captured stream:', stream);
+    setupRecorder(stream);
+  }, 500); // delay helps ensure playback is initialized
+};
+
+preview.onerror = (e) => {
+  console.error('❌ Error loading video:', e);
+};
+
+        
       };
-      
+
       input.click(); 
     }
 
