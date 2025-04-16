@@ -5,6 +5,8 @@ const WebSocket = require('ws');
 const { spawn } = require('child_process');
 const fs = require('fs');
 const path = require('path');
+const { PassThrough } = require('stream');
+const passThrough = new PassThrough();
 
 const app = express();
 const server = http.createServer(app);
@@ -116,7 +118,7 @@ function handleStream(ws, streamKey) {
   ]);
 
   streamSessions[streamKey] = ffmpeg;
-
+  passThrough.pipe(ffmpeg.stdin);
   ws.on('message', async (msg) => {
      // If msg is not a Buffer (e.g. a Blob), convert it
     const chunk = Buffer.isBuffer(msg) ? msg : Buffer.from(new Uint8Array(await msg.arrayBuffer?.()));
@@ -124,12 +126,12 @@ function handleStream(ws, streamKey) {
     console.log(`Received chunk: ${chunk.length} bytes`);
     activeStreams.get(streamKey).bytesReceived += chunk.length;
 
-    // const canWrite = ffmpeg.stdin.write(chunk);
-    // if (!canWrite) {
-    //   console.warn('FFmpeg is overwhelmed. Applying backpressure...');
-    //   ws.pause(); // prevent overload
-    //   ffmpeg.stdin.once('drain', () => ws.resume());
-    // }
+    const canWrite = passThrough.write(chunk);
+    if (!canWrite) {
+      console.warn('FFmpeg is overwhelmed. Applying backpressure...');
+      ws.pause(); // prevent overload
+      passThrough.once('drain', () => ws.resume());
+    }
   });
 
   ws.on('close', () => {
