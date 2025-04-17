@@ -83,7 +83,7 @@ app.get('/lists', (req, res) => {
 app.get('/api/list-streams', (req, res) => {
   const base = '/var/www/rtmp/hls';
   const streams = fs.existsSync(base)
-    ? fs.readdirSync(base).filter(name => fs.existsSync(`${base}/${name}/master.m3u8`))
+    ? fs.readdirSync(base).filter(name => fs.existsSync(`${base}/${name}/index.m3u8`))
     : [];
 
   res.json({ streams });
@@ -97,7 +97,7 @@ app.get('/watch/:streamKey', (req, res) => {
 
 app.get('/api/stream-exists/:streamKey', (req, res) => {
   const streamKey = req.params.streamKey;
-  const masterPlaylist = path.join('/var/www/rtmp/hls', streamKey, 'master.m3u8');
+  const masterPlaylist = path.join('/var/www/rtmp/hls', streamKey, 'index.m3u8');
 
   if (fs.existsSync(masterPlaylist)) {
     res.json({ exists: true });
