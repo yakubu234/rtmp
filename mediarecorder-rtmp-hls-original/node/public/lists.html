@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Live Streams</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #121212;
+      color: #fff;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      background-color: #1f1f1f;
+      padding: 1rem 2rem;
+      text-align: center;
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: #61dafb;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 1rem;
+      padding: 2rem;
+    }
+    .card {
+      background: #1e1e1e;
+      border-radius: 8px;
+      overflow: hidden;
+      text-align: center;
+      box-shadow: 0 0 10px rgba(0,0,0,0.5);
+      transition: transform 0.2s;
+    }
+    .card:hover {
+      transform: translateY(-4px);
+    }
+    .thumbnail {
+      width: 100%;
+      height: 150px;
+      object-fit: cover;
+      background-color: #333;
+    }
+    .title {
+      padding: 1rem;
+      font-size: 1.1rem;
+      color: #fff;
+      text-decoration: none;
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    🎬 Live Stream Directory
+  </header>
+  <main>
+    <div class="grid" id="streamGrid">
+      <!-- Streams injected by script -->
+    </div>
+  </main>
+
+  <script>
+    fetch('/api/list-streams')
+      .then(res => res.json())
+      .then(data => {
+        const grid = document.getElementById('streamGrid');
+        data.streams.forEach(stream => {
+          const card = document.createElement('div');
+          card.className = 'card';
+          card.innerHTML = `
+            <a href="/watch?streamKey=${stream}">
+              <img class="thumbnail" src="/thumbnail/${stream}.jpg" onerror="this.src='/placeholder.jpg'" alt="${stream}">
+              <span class="title">🔴 ${stream}</span>
+            </a>
+          `;
+          grid.appendChild(card);
+        });
+      });
+  </script>
+</body>
+</html>
