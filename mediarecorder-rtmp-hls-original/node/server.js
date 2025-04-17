@@ -20,7 +20,7 @@ app.use('/hls', express.static('/tmp/hls'));
 
 app.get('/generate-hls/:streamKey', (req, res) => {
   const streamKey = req.params.streamKey;
-  const outputDir = `/tmp/hls/${streamKey}`;
+  const outputDir = `/var/www/rtmp/hls/${streamKey}`;
   if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
 
   const ffmpeg = spawn('ffmpeg', [
@@ -57,7 +57,7 @@ app.get('/metrics', (req, res) => {
 });
 
 app.get('/lists', (req, res) => {
-  const base = '/tmp/hls';
+  const base = '/var/www/rtmp/hls';
   const streams = fs.existsSync(base) ? fs.readdirSync(base) : [];
   res.send('<h1>Streams</h1><ul>' +
     streams.map(s => `<li><a href="/watch/${s}">${s}</a></li>`).join('') +

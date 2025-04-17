@@ -6,10 +6,18 @@
       <style>
          body { font-family: Arial; padding: 20px; background: #f4f4f4; }
          video { width: 100%; max-width: 600px; margin-top: 20px; display: none; }
+
+         /* below is the bounce */
+         @keyframes bouncePulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.2); opacity: 0.8; } } 
+         #liveBadge.bouncing { animation: bouncePulse 1s infinite ease-in-out; } 
       </style>
    </head>
    <body>
       <h1>Start Streaming</h1>
+      <div id="countdown" style="font-size: 3rem; display: none; margin-top: 20px;"></div>
+      <div id="timer" style="font-size: 1.2rem; margin-top: 10px;">⏱️ 00:00</div>
+      <div id="liveBadge" style="display:none; font-weight:bold; color:red; margin-top:5px;">🔴 LIVE</div>
+
       <button onclick="startCamera()">Use Camera</button>
       <button onclick="startScreen()">Share Screen</button>
       <button onclick="playFile()">Upload Video</button>
@@ -21,6 +29,62 @@
         let hiddenVideo = null;
         let isPaused = false;
         const preview = document.getElementById('preview');
+
+        //
+        let countdownEl = document.getElementById('countdown'); 
+        let timerEl = document.getElementById('timer'); 
+        let recordingInterval = null; 
+        let startTime = null;
+        let elapsedBeforePause = 0;
+        let liveBadge = document.getElementById('liveBadge');
+
+        function formatTime(ms) { 
+          const totalSeconds = Math.floor(ms / 1000); 
+          const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, '0'); 
+          const seconds = String(totalSeconds % 60).padStart(2, '0'); 
+          return `${minutes}:${seconds}`; 
+        }
+
+        function startCountdown(callback) { 
+          let seconds = 3; 
+          countdownEl.textContent = seconds; 
+          countdownEl.style.display = 'block';
+
+          const countdownInterval = setInterval(() => { 
+            seconds--; 
+            if (seconds > 0) {
+              countdownEl.textContent = seconds; 
+            } else { 
+              clearInterval(countdownInterval); 
+              countdownEl.style.display = 'none'; 
+              callback(); 
+              // finally start the stream 
+            } 
+          }, 1000);
+        }
+
+        function startTimer() { 
+          clearInterval(recordingInterval); 
+          recordingInterval = setInterval(() => { 
+            const now = Date.now(); 
+            const totalElapsed = elapsedBeforePause + (now - startTime); 
+            timerEl.textContent = '⏱️ ' + formatTime(totalElapsed); 
+          }, 1000); 
+        }
+
+        function pauseTimer() { 
+          clearInterval(recordingInterval); 
+          if (startTime) { 
+            elapsedBeforePause += Date.now() - startTime; 
+            startTime = null; 
+          } 
+        }
+
+        function resumeTimer() { 
+          if (!startTime) { 
+            startTime = Date.now(); startTimer(); 
+          } 
+        }
 
         function setupRecorder(stream) {
           ws = new WebSocket('wss://anthena.i.ng/ws?streamKey=stream_demo&token=YOUR_SECRET');
@@ -44,10 +108,46 @@
                 }
               };
 
-              recorder.onstart = () => console.log('MediaRecorder started');
+              recorder.onstart = () => {
+                console.log('MediaRecorder started');
+                // live badge
+                iveBadge.style.display = 'block'; 
+                liveBadge.classList.add('bouncing'); 
+                liveBadge.style.opacity = '1'; 
+                timerEl.style.opacity = '1';
+              }
+
+              recorder.onpause = () => { 
+                console.log('⏸️ MediaRecorder paused'); 
+                pauseTimer(); 
+
+                // live badge
+                liveBadge.classList.remove('bouncing'); 
+                liveBadge.style.opacity = '0.4'; 
+                timerEl.style.opacity = '0.4';
+              };
+
+              recorder.onresume = () => { 
+                console.log('▶️ MediaRecorder resumed'); 
+                resumeTimer();
+
+                // live badge
+                iveBadge.style.display = 'block'; 
+                liveBadge.classList.add('bouncing'); 
+                liveBadge.style.opacity = '1'; 
+                timerEl.style.opacity = '1';
+
+              };
 
               try {
                 recorder.start(100); // send chunks every 100ms
+
+                // countdown for timer
+                startTime = Date.now(); elapsedBeforePause = 0; startTimer();
+
+                // live badge
+                liveBadge.style.display = 'block'; liveBadge.style.opacity = '1'; timerEl.style.opacity = '1';
+                
                 console.log('MediaRecorder.start() called');
               } catch (err) {
                 console.error('MediaRecorder start failed:', err);
@@ -78,7 +178,8 @@
           });
           console.log('📷 Camera stream tracks:', stream.getTracks().map(t => t.kind));
 
-          setupRecorder(stream);
+          // setupRecorder(stream);
+          startCountdown(() => setupRecorder(stream));
         }
 
         async function startScreen() {
@@ -86,7 +187,8 @@
               video: true,
               audio: true
           });
-          setupRecorder(stream);
+          // setupRecorder(stream);
+          startCountdown(() => setupRecorder(stream));
         }
 
         function playFile() {
@@ -122,7 +224,8 @@
                     }
 
                     console.log('📡 Captured stream from uploaded video:', stream);
-                    setupRecorder(stream);
+                    // setupRecorder(stream);
+                    startCountdown(() => setupRecorder(stream));
                 };
 
                 waitForStream();
@@ -148,10 +251,12 @@
 
           if (recorder.state === 'recording') {
               recorder.pause();
+              hiddenVideo.pause();
               isPaused = true;
               console.log('⏸️ Recording paused');
           } else if (recorder.state === 'paused') {
               recorder.resume();
+              hiddenVideo.resume();
               isPaused = false;
               console.log('▶️ Recording resumed');
           } else {
@@ -194,6 +299,15 @@
               hiddenVideo.remove();
               hiddenVideo = null;
           }
+
+          // this is to stop he timer 
+          clearInterval(recordingInterval); startTime = null; elapsedBeforePause = 0; timerEl.textContent = '⏱️ 00:00';
+
+          // live badge
+          liveBadge.classList.remove('bouncing'); 
+          liveBadge.style.display = 'none'; 
+          liveBadge.style.opacity = '1'; 
+          timerEl.style.opacity = '1';
 
           console.log('⛔ Stream stopped.');
           alert('Stream stopped.');
