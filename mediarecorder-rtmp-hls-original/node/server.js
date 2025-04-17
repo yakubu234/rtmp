@@ -127,6 +127,8 @@ server.on('upgrade', (req, socket, head) => {
       ws.streamKey = streamKey; 
       statusWSS.emit('connection', ws, req); 
     }); 
+
+    return; // ✅ IMPORTANT: prevent fallthrough to wss
   } 
   //ended
 
