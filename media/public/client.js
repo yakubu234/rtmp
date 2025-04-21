@@ -13,7 +13,7 @@ streamKey = params.get("key") || "demo-key"; // You can make this dynamic
 role = location.pathname.includes("producer") ? "moderator" : "viewer";
 
 // 👇 Step 2: Establish WebSocket and JOIN
-socket = new WebSocket(`ws://${location.host}`);
+socket = new WebSocket(`wss://${location.host}`);
 socket.onopen = () => {
   send("join", { room, streamKey, role });
 };
