@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Join a Live Room</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #111;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding-top: 50px;
+    }
+    .card {
+      background: #222;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(255,255,255,0.1);
+      width: 350px;
+    }
+    input, select, button {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border: none;
+      border-radius: 4px;
+      font-size: 1rem;
+    }
+    input, select {
+      background: #333;
+      color: #fff;
+    }
+    button {
+      background: #00b894;
+      color: #fff;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    button:hover {
+      background: #00cec9;
+    }
+    h2 {
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <h2>Join a Stream</h2>
+    <form id="joinForm">
+      <input type="text" id="streamKey" placeholder="Enter your stream key" required />
+      <input type="text" id="roomName" placeholder="Enter room name" required />
+      <select id="role" required>
+        <option value="moderator">Broadcaster (Moderator)</option>
+        <option value="viewer">Viewer</option>
+      </select>
+      <button type="submit">Join Room</button>
+    </form>
+  </div>
+
+  <script>
+    document.getElementById("joinForm").addEventListener("submit", function (e) {
+      e.preventDefault();
+      const streamKey = document.getElementById("streamKey").value.trim();
+      const roomName = document.getElementById("roomName").value.trim();
+      const role = document.getElementById("role").value;
+
+      if (!streamKey || !roomName) return alert("Please fill in all fields");
+
+      const base = role === "moderator" ? "producer.html" : "consumer.html";
+      const url = `${base}?room=${encodeURIComponent(roomName)}&key=${encodeURIComponent(streamKey)}`;
+      window.location.href = url;
+    });
+  </script>
+
+</body>
+</html>

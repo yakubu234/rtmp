@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  mediasoup:
+    build: .
+    container_name: mediasoup-server
+    ports:
+      - "3000:3000"
+    environment:
+      - MEDIASOUP_MIN_PORT=10000
+      - MEDIASOUP_MAX_PORT=10100
+    networks:
+      - mediasoup_net
+
+networks:
+  mediasoup_net:
+    driver: bridge

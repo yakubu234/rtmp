@@ -121,3 +121,32 @@ Help developers or architects choose the right streaming method based on:
 - [NGINX RTMP Module](https://github.com/arut/nginx-rtmp-module)
 - [HLS Streaming Overview](https://developer.apple.com/streaming/)
 
+
+
+<!-- to be deleted undergtround  -->
+node mediarecorder-rtmp-hls-original/node/server.js
+
+
+ffmpeg -re -i qw.MOV -f flv rtmp://anthena.i.ng/live/stream_demo
+
+
+
+
+
+Add a countdown before streaming starts ⏳
+
+Show a timer of recording duration ⏱️
+
+Save the streamed chunks on the server 🗃️
+
+Transcode the uploaded video server-side to HLS or RTMP 🎥
+
+Stream to multiple viewers via NGINX RTMP or mediasoup 📡
+
+
+
+or if you want thumbnail preview support with auto-generation.
+
+
+
+server.handleUpgrade() was called more than once with the same socket
