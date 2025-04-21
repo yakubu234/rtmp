@@ -1,5 +1,5 @@
 export default {
-    root: './public',
+    root: './',
     publicDir: './public',
     server: {
       port: 4000

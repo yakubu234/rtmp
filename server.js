@@ -14,12 +14,17 @@ const app = express();
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-app.use(express.static(path.join(__dirname, 'public')));
+// app.use(express.static(path.join(__dirname, 'public')));
 
 const peers = new Map(); // socket.id => { peerId, roomName }
 
+// Serve Vite build
+app.use(express.static(path.join(__dirname, 'dist')));
 
-app.get('/', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'index.html')); });
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'dist/index.html'));
+});
+// app.get('/', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'index.html')); });
 
 const worker = await initializeMediasoup();
 
