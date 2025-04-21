@@ -19,7 +19,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 const peers = new Map(); // socket.id => { peerId, roomName }
 
 
-app.get('/', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'join.html')); });
+app.get('/', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'index.html')); });
 
 const worker = await initializeMediasoup();
 
