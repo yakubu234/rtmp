@@ -1,3 +1,5 @@
+import * as mediasoupClient from 'mediasoup-client';
+
 let socket;
 let device, producerTransport, consumerTransport;
 let mode, room, streamKey, role;
