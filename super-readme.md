@@ -126,6 +126,8 @@ Help developers or architects choose the right streaming method based on:
 <!-- to be deleted undergtround  -->
 node mediarecorder-rtmp-hls-original/node/server.js
 
+node media/server.js
+
 
 ffmpeg -re -i qw.MOV -f flv rtmp://anthena.i.ng/live/stream_demo
 
