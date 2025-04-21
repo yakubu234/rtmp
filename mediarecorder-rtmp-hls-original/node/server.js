@@ -33,13 +33,14 @@ function hlsFfmpeg(streamKey){
     '-map', '0:v:0', '-s:v:1', '1280x720', '-b:v:1', '2800k',
     '-map', '0:v:0', '-s:v:2', '1920x1080', '-b:v:2', '5000k',
     '-c:v', 'libx264', '-preset', 'veryfast',
+    '-g', '50', '-keyint_min', '50', '-sc_threshold', '0',
     '-c:a', 'aac', '-b:a', '128k',
     '-f', 'hls',
-    '-hls_time', '6',
-    '-hls_playlist_type', 'event',
-    '-hls_list_size', '6',
-    '-hls_flags', 'delete_segments',
-    '-master_pl_name', 'master.m3u8',
+    '-hls_time', '2',
+    '-hls_playlist_type', 'event',//check this one very well
+    '-hls_list_size', '3',
+    '-hls_flags', 'delete_segments+program_date_time+independent_segments',
+    '-master_pl_name', 'index.m3u8',
     '-var_stream_map', 'v:0,a:0 v:1,a:0 v:2,a:0',
     `${outputDir}/stream_%v.m3u8`
   ]);
@@ -59,24 +60,6 @@ app.get('/metrics', (req, res) => {
   res.json({ active: metrics });
 });
 
-// app.get('/lists', (req, res) => {
-//   const base = '/var/www/rtmp/hls';
-//   const streams = fs.existsSync(base) ? fs.readdirSync(base) : [];
-//   res.send('<h1>Streams</h1><ul>' +
-//     streams.map(s => `<li><a href="/watch/${s}">${s}</a></li>`).join('') +
-//     '</ul>');
-// });
-
-// app.get('/watch/:streamKey', (req, res) => {
-//   const key = req.params.streamKey;
-//   res.send(`
-//     <h1>Watching ${key}</h1>
-//     <video width="640" height="360" controls autoplay>
-//       <source src="/hls/${key}/master.m3u8" type="application/x-mpegURL">
-//       Your browser does not support the video tag.
-//     </video>
-//   `);
-// });
 app.get('/lists', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'lists.html'));
 });

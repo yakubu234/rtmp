@@ -114,13 +114,19 @@
     function loadStream() {
       thumbnail.style.display = "none";
       if (Hls.isSupported()) {
-        const hls = new Hls();
+        const hls = new Hls({
+          debug: true, // Enable debug logging for more info
+          bufferGoal: 5,   // Try increasing this (in seconds)
+          maxBufferLength: 30, // Maximum buffer to hold (in seconds)
+          // startLevel: -1, // Auto start with the lowest quality
+        });
         hls.loadSource(sourceURL);
         hls.attachMedia(video);
         hls.on(Hls.Events.MANIFEST_PARSED, function () {
           video.style.display = "block";
         });
         hls.on(Hls.Events.ERROR, function (event, data) {
+          console.error('HLS.js Error', event, data);
           if (data.fatal) {
             // you could log non fatal errors for diagnostics or implement retry logi for transient issues here
             handleStreamError("Stream error occurred.");
