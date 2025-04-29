@@ -34,7 +34,7 @@ wss.on('connection', async (ws) => {
 
   //keep alive to control timeout 
   const interval = setInterval(() => {
-    if (ws.readyState === WebSocket.OPEN) {
+    if (ws.readyState === ws.OPEN) {
       ws.ping();
     }
   }, 30000); // Send a ping every 30 seconds
