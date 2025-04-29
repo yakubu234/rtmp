@@ -18,6 +18,8 @@ role = location.pathname.includes("producer") ? "moderator" : "viewer";
 // 👇 Step 2: Establish WebSocket and JOIN
 socket = new WebSocket(`wss://${location.host}`);
 socket.onopen = () => {
+  console.log('Viewer Room:', room, 'Stream Key:', streamKey);
+
   send("join", { room, streamKey, role });
 };
 
@@ -68,6 +70,8 @@ socket.onmessage = async ({ data }) => {
 
   // ✅ ADD THIS new if block
   if (action === "produced") {
+    console.log('Producer WebSocket connected. Joining room:', room, 'with key:', streamKey, 'as role:', role);
+
     if (pendingProducerCallback) {
       pendingProducerCallback({ id: d.id });
       pendingProducerCallback = null;
@@ -75,6 +79,8 @@ socket.onmessage = async ({ data }) => {
   }
 
   if (action === "consumed") {
+    console.log('Viewer WebSocket connected. Joining room:', room, 'with key:', streamKey, 'as role:', role);
+
     const { kind, rtpParameters } = d;
     consumerTransport.consume({ id: d.id, producerId: d.producerId, kind, rtpParameters }).then((consumer) => {
       const stream = new MediaStream();
