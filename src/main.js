@@ -28,7 +28,10 @@ socket.onmessage = async ({ data }) => {
   if (action === "joined") {
     device = new mediasoupClient.Device();
     await device.load({ routerRtpCapabilities: d.rtpCapabilities });
-    send("createTransport", { direction: mode });
+    // ✅ Only producers immediately createTransport
+    if (mode === "producer") {
+      send("createTransport", { direction: mode });
+    }
   }
 
   if (action === "transportCreated") {
@@ -56,10 +59,11 @@ socket.onmessage = async ({ data }) => {
         const track = stream.getVideoTracks()[0];
         producerTransport.produce({ track });
       });
-    } else {
-      consumerTransport = transport;
-      send("consume", { rtpCapabilities: device.rtpCapabilities });
     }
+    //  else {
+    //   consumerTransport = transport;
+    //   send("consume", { rtpCapabilities: device.rtpCapabilities });
+    // }
   }
 
   // ✅ ADD THIS new if block
@@ -80,7 +84,14 @@ socket.onmessage = async ({ data }) => {
   }
 
   if (action === "error") {
-    alert("🚫 Error: " + d.message);
+    if (d.message.includes("No active producer")) {
+      console.warn("Producer not ready yet. Retrying consume in 2s...");
+      setTimeout(() => {
+        send("consume", { rtpCapabilities: device.rtpCapabilities });
+      }, 2000);
+    } else {
+      alert("🚫 Error: " + d.message);
+    }
   }
 };
 
