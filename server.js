@@ -102,7 +102,7 @@ wss.on('connection', async (ws) => {
         ws.send(JSON.stringify({ action: 'error', data: { message: 'No active producer in this room' } }));
         return;
       }
-      
+
       const consumerTransport = room.peers.get(peerId).consumerTransport;
 
       const consumer = await consumerTransport.consume({
@@ -118,6 +118,7 @@ wss.on('connection', async (ws) => {
         data: {
           id: consumer.id,
           kind: consumer.kind,
+          producerId: consumer.producerId, // ✅ ADD THIS LINE
           rtpParameters: consumer.rtpParameters,
         }
       }));

@@ -85,7 +85,10 @@ socket.onmessage = async ({ data }) => {
     consumerTransport.consume({ id: d.id, producerId: d.producerId, kind, rtpParameters }).then((consumer) => {
       const stream = new MediaStream();
       stream.addTrack(consumer.track);
-      document.getElementById("remote").srcObject = stream;
+      
+      const remoteVideo = document.getElementById("remote");
+      remoteVideo.srcObject = stream;
+      remoteVideo.play(); // ✅
     });
   }
 
