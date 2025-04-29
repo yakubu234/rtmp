@@ -97,6 +97,12 @@ wss.on('connection', async (ws) => {
       const { rtpCapabilities } = data;
       const room = getRoom(roomName);
       const producer = Array.from(room.peers.values()).find(p => p.producer)?.producer;
+
+      if (!producer) {
+        ws.send(JSON.stringify({ action: 'error', data: { message: 'No active producer in this room' } }));
+        return;
+      }
+      
       const consumerTransport = room.peers.get(peerId).consumerTransport;
 
       const consumer = await consumerTransport.consume({

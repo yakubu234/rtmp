@@ -1,1 +1,0 @@
-install pyton and pip 3

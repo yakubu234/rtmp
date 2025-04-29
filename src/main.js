@@ -79,3 +79,11 @@ window.startProducer = () => {
 window.startConsumer = () => {
   mode = "consumer";
 };
+
+if (window.location.pathname.includes('producer')) {
+  startProducer();
+}
+
+if (window.location.pathname.includes('consumer')) {
+  startConsumer();
+}
