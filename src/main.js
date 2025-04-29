@@ -88,7 +88,7 @@ socket.onmessage = async ({ data }) => {
       
       const remoteVideo = document.getElementById("remote");
       remoteVideo.srcObject = stream;
-      remoteVideo.play(); // ✅
+      remoteVideo.play().catch((err) => console.error("Video play failed:", err)); // ✅
     });
   }
 
