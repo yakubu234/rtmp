@@ -32,6 +32,14 @@ wss.on('connection', async (ws) => {
   const peerId = crypto.randomUUID();
   let roomName;
 
+  //keep alive to control timeout 
+  const interval = setInterval(() => {
+    if (ws.readyState === WebSocket.OPEN) {
+      ws.ping();
+    }
+  }, 30000); // Send a ping every 30 seconds
+
+
   ws.on('message', async (msg) => {
     const { action, data } = JSON.parse(msg);
     const streamKey = data.streamKey; // this will be used
@@ -126,9 +134,16 @@ wss.on('connection', async (ws) => {
   });
 
   ws.on('close', () => {
+    clearInterval(interval); // Clear the interval on connection close
     if (roomName) removePeerFromRoom(roomName, peerId);
     peers.delete(ws);
   });
+
+  ws.on('pong', () => {
+    console.log('Pong received from client'); // Optional: Log when pong is received
+    // You can also implement logic here to check if the connection is still alive  
+    // Connection is alive
+  }); 
 });
 
 server.listen(4000, () => {
