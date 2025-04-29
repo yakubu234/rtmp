@@ -139,6 +139,13 @@ wss.on('connection', async (ws) => {
     peers.delete(ws);
   });
 
+  ws.on('error', (error) => {
+    console.error(`WebSocket error for peer ${peerId}:`, error);
+    clearInterval(interval);
+    if (roomName) removePeerFromRoom(roomName, peerId);
+    peers.delete(ws);
+  });
+
   ws.on('pong', () => {
     console.log('Pong received from client'); // Optional: Log when pong is received
     // You can also implement logic here to check if the connection is still alive  
