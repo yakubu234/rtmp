@@ -80,31 +80,35 @@ socket.onmessage = async ({ data }) => {
 
   if (action === "consumed") {
     console.log('Viewer WebSocket connected. Joining room:', room, 'with key:', streamKey, 'as role:', role);
-
-    const { kind, rtpParameters } = d;
-    consumerTransport.consume({ id: d.id, producerId: d.producerId, kind, rtpParameters }).then(async (consumer) => {
-      const stream = new MediaStream();
-      stream.addTrack(consumer.track);
-      
-      const remoteVideo = document.getElementById("remote");
-      remoteVideo.srcObject = stream;
-
-      console.log("Consumed track kind:", consumer.track.kind);
-console.log("Stream tracks:", stream.getTracks());
-
-      try {
-        await remoteVideo.play();
-        console.log("Remote video playing!");
-      } catch (error) {
-        console.error("Error trying to play remote video:", error);
-      }
   
-      // ✅ NEW: Resume the consumer
-      await consumer.resume();
-      console.log("Consumer resumed!");
-      // remoteVideo.play().catch((err) => console.error("Video play failed:", err)); // ✅
-    });
+    const { id, producerId, kind, rtpParameters } = d;
+  
+    consumerTransport.consume({ id, producerId, kind, rtpParameters })
+      .then(async (consumer) => {
+        const stream = new MediaStream();
+        stream.addTrack(consumer.track);
+  
+        const remoteVideo = document.getElementById("remote");
+        remoteVideo.srcObject = stream;
+  
+        console.log("Consumed track kind:", consumer.track.kind);
+        console.log("Stream tracks:", stream.getTracks());
+  
+        try {
+          await remoteVideo.play();
+          console.log("Remote video playing!");
+        } catch (error) {
+          console.error("Error trying to play remote video:", error);
+        }
+  
+        await consumer.resume();
+        console.log("Consumer resumed!");
+      })
+      .catch((error) => {
+        console.error("❌ Error consuming track:", error);
+      });
   }
+  // ✅ ADD THIS new if block  
 
   if (action === "error") {
     if (d.message.includes("No active producer")) {
