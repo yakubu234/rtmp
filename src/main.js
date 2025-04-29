@@ -1,6 +1,7 @@
 import * as mediasoupClient from 'mediasoup-client';
 
 let socket;
+let pendingProducerCallback;
 let device, producerTransport, consumerTransport;
 let mode, room, streamKey, role;
 
@@ -43,18 +44,29 @@ socket.onmessage = async ({ data }) => {
     });
 
     if (direction === "producer") {
+      transport.on("produce", ({ kind, rtpParameters }, callback, errback) => {
+        pendingProducerCallback = callback;
+        send("produce", { kind, rtpParameters });
+      });
+
       producerTransport = transport;
 
       navigator.mediaDevices.getUserMedia({ audio: true, video: true }).then(stream => {
         document.getElementById("preview").srcObject = stream;
         const track = stream.getVideoTracks()[0];
-        producerTransport.produce({ track }).then(({ id }) => {
-          send("produce", { kind: "video", rtpParameters: track.getSettings() });
-        });
+        producerTransport.produce({ track });
       });
     } else {
       consumerTransport = transport;
       send("consume", { rtpCapabilities: device.rtpCapabilities });
+    }
+  }
+
+  // ✅ ADD THIS new if block
+  if (action === "produced") {
+    if (pendingProducerCallback) {
+      pendingProducerCallback({ id: d.id });
+      pendingProducerCallback = null;
     }
   }
 
